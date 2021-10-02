@@ -21,7 +21,6 @@ public class TokPedScraper {
 
     private static final String XPATH_PRODUCT_LIST = "//div[@data-testid='lstCL2ProductList']/div";
     private static final String XPATH_PRODUCT_LINK = "a[@data-testid='lnkProductContainer']";
-    private static final String XPATH_FIRST_TIME_OVERLAY = "//div[@aria-label='unf-overlay']";
     private static final String XPATH_PRODUCT_NAME = "//h1[@data-testid='lblPDPDetailProductName']";
     private static final String XPATH_PRODUCT_DESCRIPTION = "//*[@data-testid='lblPDPDescriptionProduk']";
     private static final String XPATH_PRODUCT_IMG_LINK = "//*[@data-testid='PDPImageMain']//img";
@@ -29,8 +28,6 @@ public class TokPedScraper {
     private static final String XPATH_PRODUCT_RATING = "//*[@data-testid='lblPDPDetailProductRatingNumber']";
     private static final String XPATH_MERCHANT_NAME = "//*[@data-testid='llbPDPFooterShopName']//h2";
     private static final String XPATH_SOLD_COUNTER = "//*[@data-testid='lblPDPDetailProductSoldCounter']";
-
-    private static final String DOM_FIRST_TIME_OVERLAY = "div[aria-label=unf-overlay]";
 
     private static final String HREF = "href";
     private static final String SRC = "src";
@@ -42,7 +39,7 @@ public class TokPedScraper {
 
     @AllArgsConstructor
     public enum Category {
-        HANDPHONE(24), LAPTOP(3844);
+        HANDPHONE(24);
 
         @Getter
         int category;
@@ -51,8 +48,6 @@ public class TokPedScraper {
             switch (category) {
                 case 24:
                     return "Handphone";
-                case 3844:
-                    return "Laptop";
                 default:
                     return EMPTY;
             }
@@ -145,5 +140,13 @@ public class TokPedScraper {
     private String extractTopAdsLink(String path) throws IOException {
         return URLDecoder.decode(path.substring(path.indexOf(PARAM_R) + 2).split(AMP)[0],
                 StandardCharsets.UTF_8.name());
+    }
+
+    public String[] headers(){
+        return new String[]{"Product Name", "Description", "Image Link", "Price", "Rating", "Store" };
+    }
+
+    public String[] fields(){
+        return new String[]{"name","description", "imageLink", "price", "rating", "merchant"};
     }
 }

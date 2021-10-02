@@ -3,17 +3,15 @@ package com.tokped.scraper.service;
 import com.tokped.scraper.model.Product;
 import com.tokped.scraper.util.ExcelExporter;
 import com.tokped.scraper.util.TokPedScraper;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
-import org.springframework.core.io.InputStreamResource;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.supercsv.io.CsvBeanWriter;
+import org.supercsv.io.ICsvBeanWriter;
+import org.supercsv.prefs.CsvPreference;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -34,63 +32,43 @@ public class ScraperService {
         return PRODUCT + UNDERSCORE + "HANDPHONE"
                 + UNDERSCORE + System.currentTimeMillis() + CSV_EXT;
     }
+
     public String excelFileName(){
         return PRODUCT + UNDERSCORE + "HANDPHONE"
                 + UNDERSCORE + System.currentTimeMillis() + XLSX_EXT;
     }
 
-    public InputStreamResource exportCsv(List<Product> products){
-        String[] csvHeader = {
-                "Product Name", "Description", "Image Link", "Price", "Rating", "Store"
-        };
+    public ICsvBeanWriter exportCsv(TokPedScraper.Category category, int count, PrintWriter writer) throws IOException {
+        ICsvBeanWriter csvWriter = new CsvBeanWriter(writer, CsvPreference.STANDARD_PREFERENCE);
+        csvWriter.writeHeader(productHeaders());
 
-        List<List<String>> csvBody = new ArrayList<>();
-        for (Product product : products)
-            csvBody.add(Arrays.asList(
-                    product.getName(),
-                    product.getDescription(),
-                    product.getImageLink(),
-                    String.valueOf(product.getPrice()),
-                    String.valueOf(product.getRating()),
-                    product.getMerchant()));
+        getProductList(category,count).stream().forEach(product->{
+            try {
+                csvWriter.write(product, productFields());
+            } catch (IOException e) {
+                LoggerFactory.getLogger(this.getClass()).error(e.getMessage());
+            }
+        });
 
-        ByteArrayInputStream byteArrayOutputStream;
-
-        try (
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                // defining the CSV printer
-                CSVPrinter csvPrinter = new CSVPrinter(
-                        new PrintWriter(out),
-                        // withHeader is optional
-                        CSVFormat.DEFAULT.withHeader(csvHeader)
-                )
-        ) {
-            // populating the CSV content
-            for (List<String> record : csvBody)
-                csvPrinter.printRecord(record);
-
-            // writing the underlying stream
-            csvPrinter.flush();
-
-            byteArrayOutputStream = new ByteArrayInputStream(out.toByteArray());
-        } catch (IOException e) {
-            throw new RuntimeException(e.getMessage());
-        }
-
-        return new InputStreamResource(byteArrayOutputStream);
+        return csvWriter;
     }
 
-    public ByteArrayInputStream exportExcel(List<Product> products) {
-        String[] headers = {
-                "Product Name", "Description", "Image Link", "Price", "Rating", "Store"
-        };
-        String[] fields = {"name","description", "imageLink", "price", "rating", "merchant"};
+    public ByteArrayInputStream exportExcel(TokPedScraper.Category category, int count) {
+        List<Product> products = getProductList(category, count);
 
         ExcelExporter<Product> productExcelExporter = new ExcelExporter<Product>(Product.class.getName(), products);
 
-        productExcelExporter.createTable(headers, fields);
+        productExcelExporter.createTable(productHeaders(), productFields());
 
         return productExcelExporter.export();
+    }
+
+    public String[] productHeaders(){
+        return scraper.headers();
+    }
+
+    public String[] productFields(){
+        return scraper.fields();
     }
 
 }

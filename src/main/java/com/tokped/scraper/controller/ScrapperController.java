@@ -5,14 +5,11 @@ import com.tokped.scraper.service.ScraperService;
 import com.tokped.scraper.util.TokPedScraper;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.supercsv.io.ICsvBeanWriter;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
@@ -32,18 +29,13 @@ public class ScrapperController {
     }
 
     @GetMapping("product/csv/{count}")
-    public ResponseEntity<Resource> exportCSV(@PathVariable int count){
-        String csvFileName = scraperService.fileName();
+        public void exportCSV(HttpServletResponse response, @PathVariable int count) throws IOException {
+        response.setContentType("text/csv");
+        response.setHeader("Content-Disposition", "attachment; filename=" + scraperService.fileName());
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + csvFileName);
-        headers.set(HttpHeaders.CONTENT_TYPE, "text/csv");
+        ICsvBeanWriter csvWriter = scraperService.exportCsv(TokPedScraper.Category.HANDPHONE,count,response.getWriter());
 
-        return new ResponseEntity<Resource>(
-                scraperService.exportCsv(scraperService.getProductList(TokPedScraper.Category.HANDPHONE,count)),
-                headers,
-                HttpStatus.OK
-        );
+        csvWriter.close();
     }
 
     @GetMapping("product/excel/{count}")
@@ -52,10 +44,8 @@ public class ScrapperController {
         response.setContentType("application/octet-stream");
         response.setHeader("Content-Disposition", "attachment; filename="+ scraperService.excelFileName());
 
-        ByteArrayInputStream stream = scraperService.exportExcel(scraperService.getProductList(TokPedScraper.Category.HANDPHONE,count));
+        ByteArrayInputStream stream = scraperService.exportExcel(TokPedScraper.Category.HANDPHONE,count);
 
         IOUtils.copy(stream, response.getOutputStream());
     }
-
-
 }
