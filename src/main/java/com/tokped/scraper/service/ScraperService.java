@@ -1,6 +1,7 @@
 package com.tokped.scraper.service;
 
 import com.tokped.scraper.model.Product;
+import com.tokped.scraper.util.ExcelExporter;
 import com.tokped.scraper.util.TokPedScraper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -21,6 +22,7 @@ public class ScraperService {
     private static final String UNDERSCORE = "_";
     private static final String PRODUCT = "Product";
     private static final String CSV_EXT = ".csv";
+    private static final String XLSX_EXT = ".xlsx";
 
     private TokPedScraper scraper = new TokPedScraper();
 
@@ -31,6 +33,10 @@ public class ScraperService {
     public String fileName(){
         return PRODUCT + UNDERSCORE + "HANDPHONE"
                 + UNDERSCORE + System.currentTimeMillis() + CSV_EXT;
+    }
+    public String excelFileName(){
+        return PRODUCT + UNDERSCORE + "HANDPHONE"
+                + UNDERSCORE + System.currentTimeMillis() + XLSX_EXT;
     }
 
     public InputStreamResource exportCsv(List<Product> products){
@@ -73,4 +79,18 @@ public class ScraperService {
 
         return new InputStreamResource(byteArrayOutputStream);
     }
+
+    public ByteArrayInputStream exportExcel(List<Product> products) {
+        String[] headers = {
+                "Product Name", "Description", "Image Link", "Price", "Rating", "Store"
+        };
+        String[] fields = {"name","description", "imageLink", "price", "rating", "merchant"};
+
+        ExcelExporter<Product> productExcelExporter = new ExcelExporter<Product>(Product.class.getName(), products);
+
+        productExcelExporter.createTable(headers, fields);
+
+        return productExcelExporter.export();
+    }
+
 }
